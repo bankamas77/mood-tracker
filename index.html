@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Трекер настрою</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Трекер настрою</h1>
+  </header>
+
+  <main>
+    <section id="mood-form">
+      <h2>Відмітити настрій</h2>
+      <form>
+        <div class="field">
+          <label for="mood-select">Оберіть настрій</label>
+          <select id="mood-select" name="mood">
+            <option value="happy">Радісний</option>
+            <option value="calm">Спокійний</option>
+            <option value="sad">Сумний</option>
+            <option value="angry">Роздратований</option>
+            <option value="tired">Втомлений</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="mood-date">Дата</label>
+          <input type="date" id="mood-date" name="date">
+        </div>
+
+        <div class="field">
+          <label for="mood-note">Нотатка (необов'язково)</label>
+          <textarea id="mood-note" name="note"></textarea>
+        </div>
+
+        <button type="submit" class="btn">Зберегти запис</button>
+      </form>
+    </section>
+
+    <section id="history">
+      <h2>Історія записів</h2>
+
+      <article class="record">
+        <h3>23 вересня 2026</h3>
+        <p>Настрій: Радісний</p>
+        <p>Гарний день, все встигла зробити.</p>
+      </article>
+
+      <article class="record">
+        <h3>22 вересня 2026</h3>
+        <p>Настрій: Втомлений</p>
+        <p>Багато навчання, мало сну.</p>
+      </article>
+
+      <article class="record">
+        <h3>21 вересня 2026</h3>
+        <p>Настрій: Спокійний</p>
+        <p>Звичайний день.</p>
+      </article>
+    </section>
+  </main>
+
+  <aside>
+    <h2>Статистика</h2>
+    <p>Записів за тиждень: 3</p>
+    <p>Найчастіший настрій: Спокійний</p>
+  </aside>
+
+  <footer>
+    <p>Навчальний проєкт «Трекер настрою». Практикум з курсу «Програмування веб-застосувань». &copy; 2026</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
