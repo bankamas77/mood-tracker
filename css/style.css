@@ -1,4 +1,4 @@
-/*  Reset  */
+/* ===== Reset ===== */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -12,30 +12,59 @@ body {
   background-color: #fdfbf9;
 }
 
-/*  Типографіка  */
+/* зображення не виходять за межі контейнера */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ===== Типографіка ===== */
 h1, h2, h3 {
   font-weight: 700;
   margin: 0 0 0.5rem 0;
 }
 
-/*  Header (селектор за тегом) */
-header {
+/* ===== Header: Flexbox (мобільний варіант — у стовпчик) ===== */
+.site-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
   background: linear-gradient(135deg, #e6e6fa, #d9f2e6);
-  padding: 24px;
-  text-align: center;
   border-bottom: 1px solid #ddd6f3;
+  text-align: center;
 }
 
-header h1 {
-  font-size: 2rem;
+.site-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
   color: #5b4b8a;
 }
 
-/*  Main / section (центрована колонка контенту)  */
-main {
+/* nav — компактний ряд посилань, що переноситься на новий рядок */
+.site-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+.site-header nav a {
+  color: #5b4b8a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.site-header nav a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Макет сторінки: на мобільному — одна колонка, aside під main ===== */
+.layout {
   max-width: 720px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 16px;
 }
 
 main section {
@@ -43,12 +72,12 @@ main section {
 }
 
 main section h2 {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   color: #5b4b8a;
   margin-bottom: 16px;
 }
 
-/*Форма (селектор за класом) */
+/* ===== Форма ===== */
 .field {
   padding: 8px 0;
   margin-bottom: 8px;
@@ -73,7 +102,6 @@ main section h2 {
   background-color: #fff;
 }
 
-/* псевдоклас :focus */
 .field select:focus,
 .field input:focus,
 .field textarea:focus {
@@ -87,7 +115,6 @@ main section h2 {
   resize: vertical;
 }
 
-/* Кнопка (селектор за класом + псевдоклас :hover) */
 .btn {
   padding: 12px 24px;
   border: none;
@@ -103,12 +130,17 @@ main section h2 {
   background-color: #9c88d1;
 }
 
-/*  Картки записів (селектор за класом, нащадковий селектор)  */
+/* ===== Сітка карток (Grid): мобільний — 1 колонка ===== */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
 .record {
-  background-color: #fdeee3; /* персиковий пастельний фон */
+  background-color: #fdeee3;
   border-radius: 16px;
   padding: 14px;
-  margin-bottom: 12px;
 }
 
 .record h3 {
@@ -121,15 +153,12 @@ main section h2 {
   margin: 4px 0;
 }
 
-/* чергування кольору карток через псевдоклас :nth-child */
 .record:nth-child(odd) {
-  background-color: #e3f5ec; /* м'ятний пастельний фон */
+  background-color: #e3f5ec;
 }
 
-/* Аside (селектор за тегом)  */
+/* ===== Aside ===== */
 aside {
-  max-width: 720px;
-  margin: 0 auto 24px auto;
   padding: 20px;
   background-color: #e6e6fa;
   border-radius: 12px;
@@ -145,10 +174,55 @@ aside p {
   margin: 4px 0;
 }
 
-/*  Footer (селектор за тегом)  */
+/* ===== Footer ===== */
 footer {
   padding: 16px;
   text-align: center;
   font-size: 0.85rem;
   color: #8a8a8a;
+}
+
+/* ===== Планшет (від 600px) ===== */
+@media (min-width: 600px) {
+  .site-header {
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 20px 24px;
+    text-align: left;
+  }
+
+  .site-header h1 {
+    font-size: 2rem;
+  }
+
+  .layout {
+    padding: 24px;
+  }
+
+  /* картки записів — 2 колонки */
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ===== Десктоп (від 1024px) ===== */
+@media (min-width: 1024px) {
+  .site-header {
+    padding: 24px 48px;
+  }
+
+  /* main і aside — поруч у пропорції 3 : 1 */
+  .layout {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 24px;
+    align-items: start;
+    max-width: 1200px;
+    padding: 32px 24px;
+  }
+
+  .cards {
+    gap: 16px;
+  }
 }
