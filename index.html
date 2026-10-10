@@ -24,11 +24,11 @@
           <div class="field">
             <label for="mood-select">Оберіть настрій</label>
             <select id="mood-select" name="mood">
-              <option value="happy">Радісний</option>
-              <option value="calm">Спокійний</option>
-              <option value="sad">Сумний</option>
-              <option value="angry">Роздратований</option>
-              <option value="tired">Втомлений</option>
+              <option value="5">Радісний</option>
+              <option value="4">Спокійний</option>
+              <option value="3">Втомлений</option>
+              <option value="2">Сумний</option>
+              <option value="1">Роздратований</option>
             </select>
           </div>
 
@@ -49,23 +49,46 @@
       <section id="history">
         <h2>Історія записів</h2>
 
+        <div class="mood-scale-box">
+          <h3>Шкала настрою</h3>
+          <ul class="mood-scale">
+            <li class="mood-5"><span class="swatch"></span>5 — Радісний</li>
+            <li class="mood-4"><span class="swatch"></span>4 — Спокійний</li>
+            <li class="mood-3"><span class="swatch"></span>3 — Втомлений</li>
+            <li class="mood-2"><span class="swatch"></span>2 — Сумний</li>
+            <li class="mood-1"><span class="swatch"></span>1 — Роздратований</li>
+          </ul>
+        </div>
+
         <div class="cards">
-          <article class="record">
+          <article class="record mood-5">
             <h3>23 вересня 2026</h3>
-            <p>Настрій: Радісний</p>
+            <p class="mood-badge">Настрій: 5 — Радісний</p>
             <p>Гарний день, все встигла зробити.</p>
           </article>
 
-          <article class="record">
+          <article class="record mood-3">
             <h3>22 вересня 2026</h3>
-            <p>Настрій: Втомлений</p>
+            <p class="mood-badge">Настрій: 3 — Втомлений</p>
             <p>Багато навчання, мало сну.</p>
           </article>
 
-          <article class="record">
+          <article class="record mood-4">
             <h3>21 вересня 2026</h3>
-            <p>Настрій: Спокійний</p>
+            <p class="mood-badge">Настрій: 4 — Спокійний</p>
             <p>Звичайний день.</p>
+          </article>
+
+          <article class="record mood-2">
+            <h3>20 вересня 2026</h3>
+            <p class="mood-badge">Настрій: 2 — Сумний</p>
+            <p>Дощ і нічого не хотілося.</p>
+          </article>
+
+          <article class="record mood-1">
+            <h3>19 вересня 2026</h3>
+            <p class="mood-badge">Настрій: 1 — Роздратований</p>
+            <p>Не вийшло з першого разу, дратувало.</p>
           </article>
         </div>
       </section>
@@ -73,8 +96,9 @@
 
     <aside id="summary">
       <h2>Підсумок</h2>
-      <p>Записів за тиждень: 3</p>
-      <p>Найчастіший настрій: Спокійний</p>
+      <p>Записів за тиждень: 5</p>
+      <p class="big-number">3 з 5</p>
+      <p>Середній настрій</p>
     </aside>
   </div>
 
