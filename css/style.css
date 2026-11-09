@@ -336,3 +336,7 @@ footer {
     padding: var(--space-4) var(--space-3);
   }
 }
+
+/* Практикум 7: класи рівня настрою, додані з JS */
+.record.good { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.record.hard { opacity: 0.95; }

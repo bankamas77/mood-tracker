@@ -8,3 +8,5 @@
 - Практикум 4: адаптивна верстка (Flexbox, Grid, медіа-запити).
 - Практикум 5: візуальний дизайн (кольори, типографіка), див. DESIGN.md.
 - Практикум 6: основи JavaScript (script.js).
+
+Практикум 7: маніпуляція DOM за допомогою JavaScript (querySelector, createElement, textContent, classList, dataset).

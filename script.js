@@ -5,11 +5,11 @@ console.log('script.js підключено');
 
 // ===== Дані варіанта: записи настрою (mood — число від 1 до 5) =====
 const moodRecords = [
-  { date: '2026-09-23', mood: 5 },
-  { date: '2026-09-22', mood: 3 },
-  { date: '2026-09-21', mood: 4 },
-  { date: '2026-09-20', mood: 2 },
-  { date: '2026-09-19', mood: 1 },
+  { date: '2026-09-23', mood: 5, note: 'Гарний день, все встигла зробити.' },
+  { date: '2026-09-22', mood: 3, note: 'Багато навчання, мало сну.' },
+  { date: '2026-09-21', mood: 4, note: 'Звичайний день.' },
+  { date: '2026-09-20', mood: 2, note: 'Дощ і нічого не хотілося.' },
+  { date: '2026-09-19', mood: 1, note: 'Не вийшло з першого разу, дратувало.' },
 ];
 
 // Назви рівнів настрою (індекс масиву = рівень, 0 не використовується)
@@ -63,3 +63,46 @@ console.log(`Останній запис (${moodToLabel(lastMood)}) — ${compar
 
 // Виклик стрілкової функції з реальними даними
 console.log(`Середній настрій словами: ${moodToLabel(Math.round(averageMood))}`);
+
+// ===== Практикум 7: маніпуляція DOM =====
+
+// Видаляємо статичний приклад картки з розмітки
+const staticExample = document.querySelector('.static-example');
+if (staticExample) {
+  staticExample.remove();
+}
+
+// Повертає клас за рівнем настрою (good / ok / hard)
+const moodLevel = mood => (mood >= 4 ? 'good' : mood === 3 ? 'ok' : 'hard');
+
+// Створює картку запису через createElement і додає її в контейнер
+function renderMoodHistory(records) {
+  const container = document.querySelector('#mood-history');
+  container.innerHTML = '';
+
+  for (const record of records) {
+    const card = document.createElement('article');
+    card.classList.add('record', `mood-${record.mood}`, moodLevel(record.mood));
+    card.dataset.mood = record.mood;
+
+    const title = document.createElement('h3');
+    title.textContent = record.date;
+
+    const badge = document.createElement('p');
+    badge.classList.add('mood-badge');
+    badge.textContent = `Настрій: ${record.mood} — ${moodToLabel(record.mood)}`;
+
+    const note = document.createElement('p');
+    note.textContent = record.note;
+
+    card.append(title, badge, note);
+    container.append(card);
+  }
+}
+
+renderMoodHistory(moodRecords);
+
+// Оновлюємо підсумок через textContent
+document.querySelector('#records-count').textContent = `Записів за тиждень: ${moodRecords.length}`;
+document.querySelector('.big-number').textContent = `${averageMood.toFixed(1)} з 5`;
+document.querySelector('#avg-mood').textContent = `Середній настрій: ${moodToLabel(Math.round(averageMood))}`;
