@@ -11,3 +11,4 @@
 
 Практикум 7: маніпуляція DOM за допомогою JavaScript (querySelector, createElement, textContent, classList, dataset).
 Практикум 8: обробка подій та форми, клієнтська валідація (addEventListener, preventDefault, setCustomValidity, form.reset).
+Практикум 9: клієнт для API (fetch, async/await, обробка помилок, стан завантаження).

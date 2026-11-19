@@ -183,3 +183,90 @@ form.addEventListener('submit', event => {
   updateNoteCounter();
   formStatus.textContent = `Запис за ${date} додано`;
 });
+
+// ===== Практикум 9: запит до API (fetch / async / await) =====
+
+// API: JSONPlaceholder, коментарі до посту №1 (мок-дані):
+// name — заголовок запису, body — текст нотатки, email — автор
+// https://jsonplaceholder.typicode.com/comments?postId=1
+const API_URL = 'https://jsonplaceholder.typicode.com/comments?postId=1';
+
+const apiList = document.querySelector('#api-list');
+const apiLoading = document.querySelector('#api-loading');
+const apiError = document.querySelector('#api-error');
+const reloadBtn = document.querySelector('#reload-btn');
+
+// Робить першу літеру великою (name в API приходить з малої)
+const capitalize = text => text.charAt(0).toUpperCase() + text.slice(1);
+
+// Показує або ховає стан завантаження і блокує кнопку «Оновити»
+function showLoading(isLoading) {
+  apiLoading.hidden = !isLoading;
+  reloadBtn.disabled = isLoading;
+}
+
+// Показує зрозуміле повідомлення про помилку (порожній рядок — ховає)
+function showError(message) {
+  apiError.textContent = message;
+  apiError.hidden = message === '';
+}
+
+// Рендер списку записів із сервера (той самий підхід, що й у практикумі 7)
+function renderApiRecords(comments) {
+  apiList.innerHTML = '';
+
+  for (const comment of comments) {
+    const card = document.createElement('article');
+    card.classList.add('record', 'api-record');
+
+    const title = document.createElement('h3');
+    title.textContent = capitalize(comment.name);
+
+    const author = document.createElement('p');
+    author.classList.add('mood-badge');
+    author.textContent = comment.email;
+
+    const note = document.createElement('p');
+    note.textContent = comment.body;
+
+    card.append(title, author, note);
+    apiList.append(card);
+  }
+}
+
+// Завантажує записи з API; обробляє помилки HTTP та мережі
+async function loadComments() {
+  showLoading(true);
+  showError('');
+
+  try {
+    const response = await fetch(API_URL);
+
+    // fetch не вважає 404/500 помилкою, тому перевіряємо статус вручну
+    if (!response.ok) {
+      throw new Error(`Сервер відповів кодом ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.length === 0) {
+      apiList.innerHTML = '';
+      showError('Записів поки немає.');
+      return;
+    }
+
+    renderApiRecords(data);
+  } catch (error) {
+    apiList.innerHTML = '';
+    showError('Записи тимчасово недоступні');
+    console.error(error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Кнопка «Оновити» повторює запит без перезавантаження сторінки
+reloadBtn.addEventListener('click', loadComments);
+
+// Перше завантаження при відкритті сторінки
+loadComments();

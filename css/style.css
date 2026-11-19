@@ -377,3 +377,28 @@ footer {
 .field input:user-invalid {
   border-color: #a12b20;
 }
+
+/* Практикум 9: записи із сервера */
+#api-records .btn {
+  margin-bottom: var(--space-2);
+}
+
+#api-records .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.api-record {
+  --mood-color: var(--primary);
+  --mood-bg: var(--lavender);
+}
+
+.api-record p:last-child {
+  white-space: pre-line;
+}
+
+#api-error:not([hidden]) {
+  padding: var(--space-1) var(--space-2);
+  background-color: #fbeae7;
+  border-radius: 8px;
+}
