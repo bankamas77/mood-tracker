@@ -340,3 +340,40 @@ footer {
 /* Практикум 7: класи рівня настрою, додані з JS */
 .record.good { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
 .record.hard { opacity: 0.95; }
+
+/* Практикум 8: повідомлення форми, лічильник, валідація */
+.field small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
+.error {
+  min-height: 1.4em;
+  margin: var(--space-1) 0 0 0;
+  color: #a12b20;
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.counter {
+  margin: var(--space-1) 0 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
+.counter.near-limit {
+  color: #a12b20;
+  font-weight: 700;
+}
+
+.status {
+  margin: var(--space-2) 0 0 0;
+  color: var(--mood-4);
+  font-weight: 600;
+}
+
+.field input:user-invalid {
+  border-color: #a12b20;
+}

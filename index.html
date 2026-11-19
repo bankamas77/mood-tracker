@@ -21,29 +21,27 @@
     <main>
       <section id="mood-form">
         <h2>Відмітити настрій</h2>
-        <form>
+        <form id="mood-entry-form">
           <div class="field">
-            <label for="mood-select">Оберіть настрій</label>
-            <select id="mood-select" name="mood">
-              <option value="5">Радісний</option>
-              <option value="4">Спокійний</option>
-              <option value="3">Втомлений</option>
-              <option value="2">Сумний</option>
-              <option value="1">Роздратований</option>
-            </select>
+            <label for="mood-date">Дата</label>
+            <input type="date" id="mood-date" name="date" required>
           </div>
 
           <div class="field">
-            <label for="mood-date">Дата</label>
-            <input type="date" id="mood-date" name="date">
+            <label for="mood-value">Настрій (число від 1 до 5)</label>
+            <input type="number" id="mood-value" name="mood" min="1" max="5" step="1" required aria-describedby="mood-hint mood-error">
+            <small id="mood-hint">1 — роздратований, 3 — втомлений, 5 — радісний</small>
+            <p id="mood-error" class="error" role="alert"></p>
           </div>
 
           <div class="field">
             <label for="mood-note">Нотатка (необов'язково)</label>
-            <textarea id="mood-note" name="note"></textarea>
+            <input type="text" id="mood-note" name="note" maxlength="200" aria-describedby="note-counter">
+            <p id="note-counter" class="counter" aria-live="polite">Залишилось символів: 200</p>
           </div>
 
           <button type="submit" class="btn">Зберегти запис</button>
+          <p id="form-status" class="status" role="status"></p>
         </form>
       </section>
 

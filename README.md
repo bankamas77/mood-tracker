@@ -10,3 +10,4 @@
 - Практикум 6: основи JavaScript (script.js).
 
 Практикум 7: маніпуляція DOM за допомогою JavaScript (querySelector, createElement, textContent, classList, dataset).
+Практикум 8: обробка подій та форми, клієнтська валідація (addEventListener, preventDefault, setCustomValidity, form.reset).

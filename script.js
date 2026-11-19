@@ -93,7 +93,7 @@ function renderMoodHistory(records) {
     badge.textContent = `Настрій: ${record.mood} — ${moodToLabel(record.mood)}`;
 
     const note = document.createElement('p');
-    note.textContent = record.note;
+    note.textContent = record.note || 'Без нотатки';
 
     card.append(title, badge, note);
     container.append(card);
@@ -102,7 +102,84 @@ function renderMoodHistory(records) {
 
 renderMoodHistory(moodRecords);
 
-// Оновлюємо підсумок через textContent
-document.querySelector('#records-count').textContent = `Записів за тиждень: ${moodRecords.length}`;
-document.querySelector('.big-number').textContent = `${averageMood.toFixed(1)} з 5`;
-document.querySelector('#avg-mood').textContent = `Середній настрій: ${moodToLabel(Math.round(averageMood))}`;
+// Оновлює підсумок через textContent за поточним масивом
+function updateSummary() {
+  const average = calcAverageMood(moodRecords);
+  document.querySelector('#records-count').textContent = `Записів за тиждень: ${moodRecords.length}`;
+  document.querySelector('.big-number').textContent = `${average.toFixed(1)} з 5`;
+  document.querySelector('#avg-mood').textContent = `Середній настрій: ${moodToLabel(Math.round(average))}`;
+}
+
+updateSummary();
+
+// ===== Практикум 8: події та форма =====
+
+const form = document.querySelector('#mood-entry-form');
+const dateInput = document.querySelector('#mood-date');
+const moodInput = document.querySelector('#mood-value');
+const noteInput = document.querySelector('#mood-note');
+const moodError = document.querySelector('#mood-error');
+const noteCounter = document.querySelector('#note-counter');
+const formStatus = document.querySelector('#form-status');
+
+// Сьогоднішня дата як значення за замовчуванням (формат РРРР-ММ-ДД)
+const today = new Date().toLocaleDateString('en-CA');
+dateInput.defaultValue = today;
+dateInput.value = today;
+
+// Перевірка настрою на подію input: ціле число від 1 до 5
+function validateMood() {
+  const value = moodInput.value;
+  const number = Number(value);
+  let message = '';
+
+  if (value !== '' && (!Number.isInteger(number) || number < 1 || number > 5)) {
+    message = 'Настрій має бути цілим числом від 1 до 5';
+  }
+
+  moodInput.setCustomValidity(message);
+  moodError.textContent = message;
+}
+
+// Лічильник символів нотатки: оновлюється на кожне натискання клавіші
+function updateNoteCounter() {
+  const left = noteInput.maxLength - noteInput.value.length;
+  noteCounter.textContent = `Залишилось символів: ${left}`;
+  noteCounter.classList.toggle('near-limit', left <= 20);
+}
+
+moodInput.addEventListener('input', validateMood);
+noteInput.addEventListener('input', updateNoteCounter);
+
+// Надсилання форми: без перезавантаження сторінки
+form.addEventListener('submit', event => {
+  event.preventDefault();
+
+  // зчитуємо значення полів
+  const date = dateInput.value;
+  const mood = Number(moodInput.value);
+  const note = noteInput.value.trim();
+
+  // додаткова перевірка перед додаванням
+  validateMood();
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  // новий об'єкт у тому ж форматі, що й у масиві; додаємо в масив
+  moodRecords.push({ date, mood, note });
+  // найновіші дати зверху (рядки РРРР-ММ-ДД порівнюються коректно)
+  moodRecords.sort((a, b) => b.date.localeCompare(a.date));
+
+  // перемальовуємо список і підсумок
+  renderMoodHistory(moodRecords);
+  updateSummary();
+
+  // очищаємо форму та службові повідомлення
+  form.reset();
+  moodInput.setCustomValidity('');
+  moodError.textContent = '';
+  updateNoteCounter();
+  formStatus.textContent = `Запис за ${date} додано`;
+});
