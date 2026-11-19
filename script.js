@@ -1,3 +1,4 @@
+// Практикум 12: Canvas-графік динаміки настрою (requestAnimationFrame) за даними з IndexedDB.
 // Практикум 11 (частина 2): збереження записів в IndexedDB (сховище moodEntries) + одноразова міграція з localStorage.
 // Практикум 10: Vue 3 (CDN), список рендерить компонент MoodEntry.
 // Практикум 6: основи JavaScript. Результат виводиться в консоль браузера.
@@ -279,6 +280,7 @@ async function removeRecord(id) {
       moodRecords.splice(index, 1);
     }
     updateSummary();
+    animateChart();
   } catch (error) {
     console.error(error);
     showStorageError('Не вдалося видалити запис.');
@@ -309,6 +311,7 @@ form.addEventListener('submit', async event => {
     moodRecords.push({ id, date, mood, note });
     moodRecords.sort((a, b) => b.date.localeCompare(a.date));
     updateSummary();
+    animateChart();
 
     // очищаємо форму та службові повідомлення
     form.reset();
@@ -409,6 +412,154 @@ reloadBtn.addEventListener('click', loadComments);
 // Перше завантаження при відкритті сторінки
 loadComments();
 
+// ===== Практикум 12: Canvas-графік динаміки настрою =====
+
+const chartCanvas = document.querySelector('#mood-chart');
+const ctx = chartCanvas.getContext('2d');
+const replayBtn = document.querySelector('#replay-chart');
+
+const CHART_POINTS = 7;       // скільки останніх записів показуємо
+const CHART_DURATION = 900;   // тривалість анімації малювання, мс
+const PAD = { left: 44, right: 20, top: 20, bottom: 36 };
+
+let chartFrame = null;        // id поточного кадру requestAnimationFrame
+
+// Колір точки беремо з CSS-змінних дизайн-системи (--mood-1 … --mood-5)
+function moodColor(mood) {
+  return getComputedStyle(document.documentElement).getPropertyValue(`--mood-${mood}`).trim() || '#4b3d78';
+}
+
+// Дані для графіка: останні N записів з масиву moodRecords за зростанням дати
+function getChartData() {
+  return [...moodRecords]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-CHART_POINTS);
+}
+
+// Підпис дати: РРРР-ММ-ДД → ДД.ММ
+const shortDate = date => `${date.slice(8, 10)}.${date.slice(5, 7)}`;
+
+// Малює один кадр: progress від 0 до 1 — яка частина ламаної вже намальована
+function drawChart(progress) {
+  const w = chartCanvas.width;
+  const h = chartCanvas.height;
+  const data = getChartData();
+
+  // обов'язково очищаємо попередній кадр
+  ctx.clearRect(0, 0, w, h);
+
+  const plotW = w - PAD.left - PAD.right;
+  const plotH = h - PAD.top - PAD.bottom;
+  const y = mood => PAD.top + plotH - ((mood - 1) / 4) * plotH;
+
+  // сітка та підписи осі Y (рівні настрою 1–5)
+  ctx.font = '14px system-ui, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.lineWidth = 1;
+  for (let level = 1; level <= 5; level++) {
+    ctx.strokeStyle = '#e3dcf3';
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, y(level));
+    ctx.lineTo(w - PAD.right, y(level));
+    ctx.stroke();
+    ctx.fillStyle = '#5f5f5f';
+    ctx.fillText(String(level), PAD.left - 10, y(level));
+  }
+
+  if (data.length === 0) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#5f5f5f';
+    ctx.fillText('Поки немає даних для графіка', w / 2, h / 2);
+    return;
+  }
+
+  // координати точок: x рівномірно за індексом запису
+  const x = i => (data.length === 1 ? PAD.left + plotW / 2 : PAD.left + (i / (data.length - 1)) * plotW);
+  const points = data.map((record, i) => ({ x: x(i), y: y(record.mood), record }));
+
+  // скільки сегментів ламаної показати за поточного прогресу
+  const reached = progress * (points.length - 1);
+  const fullSegments = Math.floor(reached);
+  const partial = reached - fullSegments;
+
+  // ламана лінія
+  ctx.strokeStyle = '#4b3d78';
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    if (i <= fullSegments) {
+      ctx.lineTo(points[i].x, points[i].y);
+    } else if (i === fullSegments + 1 && partial > 0) {
+      const from = points[i - 1];
+      const to = points[i];
+      ctx.lineTo(from.x + (to.x - from.x) * partial, from.y + (to.y - from.y) * partial);
+    }
+  }
+  ctx.stroke();
+
+  // точки (з'являються, коли лінія до них дійшла) та підписи дат
+  ctx.textAlign = 'center';
+  points.forEach((point, i) => {
+    if (i <= fullSegments || progress >= 1) {
+      ctx.fillStyle = moodColor(point.record.mood);
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#5f5f5f';
+    ctx.fillText(shortDate(point.record.date), point.x, h - PAD.bottom + 20);
+  });
+}
+
+// Зупиняє цикл анімації (cancelAnimationFrame)
+function stopChart() {
+  if (chartFrame !== null) {
+    cancelAnimationFrame(chartFrame);
+    chartFrame = null;
+  }
+}
+
+// Запускає анімацію малювання графіка спочатку: цикл через requestAnimationFrame
+function animateChart() {
+  stopChart();
+  let start = null;
+
+  function step(now) {
+    if (start === null) {
+      start = now;
+    }
+    const progress = Math.min((now - start) / CHART_DURATION, 1);
+    drawChart(progress);
+
+    if (progress < 1) {
+      chartFrame = requestAnimationFrame(step);
+    } else {
+      chartFrame = null;   // анімацію завершено
+    }
+  }
+
+  chartFrame = requestAnimationFrame(step);
+}
+
+// Кнопка «Програти знову»
+replayBtn.addEventListener('click', animateChart);
+
+// Анімація стартує, коли графік з'являється на екрані, і зупиняється, коли він зникає з виду
+const chartObserver = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    animateChart();
+  } else {
+    stopChart();
+  }
+});
+chartObserver.observe(chartCanvas);
+
 // ===== Початкове завантаження з IndexedDB =====
 
 // Мігрує старі дані, читає всі записи й заповнює реактивний масив;
@@ -420,6 +571,7 @@ async function initStorage() {
     items.sort((a, b) => b.date.localeCompare(a.date));
     moodRecords.splice(0, moodRecords.length, ...items);
     updateSummary();
+    animateChart();
   } catch (error) {
     console.error(error);
     showStorageError('Сховище IndexedDB недоступне: записи не будуть збережені.');
