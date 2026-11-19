@@ -1,4 +1,4 @@
-// Практикум 11 (частина 1): збереження записів у localStorage (JSON.stringify / JSON.parse).
+// Практикум 11 (частина 2): збереження записів в IndexedDB (сховище moodEntries) + одноразова міграція з localStorage.
 // Практикум 10: Vue 3 (CDN), список рендерить компонент MoodEntry.
 // Практикум 6: основи JavaScript. Результат виводиться в консоль браузера.
 
@@ -15,15 +15,10 @@ const seedRecords = [
   { id: 1, date: '2026-09-19', mood: 1, note: 'Не вийшло з першого разу, дратувало.' },
 ];
 
-// ===== Практикум 11: localStorage =====
+// ===== Практикум 11: localStorage (залишено для одноразової міграції) =====
 
-// Ключ, під яким масив записів зберігається в localStorage
+// Ключ, під яким старі записи зберігались у localStorage (частина 1)
 const STORAGE_KEY = 'moodEntries';
-
-// Зберігає масив записів у localStorage (тільки рядки, тому JSON.stringify)
-function saveToLocalStorage(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
 
 // Читає масив записів із localStorage; при пошкоджених даних повертає порожній масив
 function loadFromLocalStorage() {
@@ -36,13 +31,86 @@ function loadFromLocalStorage() {
   }
 }
 
-// Перший запуск (ключа ще немає) — зберігаємо демонстраційні записи, далі беремо збережене
-if (localStorage.getItem(STORAGE_KEY) === null) {
-  saveToLocalStorage(seedRecords);
+// Vue.reactive робить масив реактивним; спочатку порожній — його заповнює initStorage() з IndexedDB
+const moodRecords = Vue.reactive([]);
+
+// ===== Практикум 11: IndexedDB =====
+
+const DB_NAME = 'MoodTrackerDB';
+const STORE_NAME = 'moodEntries';
+
+// Відкриває базу; onupgradeneeded створює сховище moodEntries (keyPath id, autoIncrement)
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = event => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
 
-// Vue.reactive робить масив реактивним: будь-яка зміна (push, sort) автоматично оновлює список
-const moodRecords = Vue.reactive(loadFromLocalStorage());
+// Додає або оновлює запис (put); повертає ключ id (для нового запису його видає autoIncrement)
+async function addItem(item) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const request = tx.objectStore(STORE_NAME).put(item);
+    tx.oncomplete = () => resolve(request.result);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Оновлення наявного запису — той самий put з тим самим id
+const updateItem = addItem;
+
+// Повертає всі записи зі сховища (readonly-транзакція)
+async function getAllItems() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const request = tx.objectStore(STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Видаляє запис за id (readwrite-транзакція)
+async function deleteItem(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Одноразова міграція: якщо сховище порожнє, а в localStorage є записи — переносимо їх
+// і ставимо прапорець migrated, щоб не повторювати перенесення при наступних запусках
+async function migrateFromLocalStorage() {
+  if (localStorage.getItem('migrated') === 'true') {
+    return;
+  }
+
+  const saved = loadFromLocalStorage();
+  const existing = await getAllItems();
+
+  if (existing.length === 0 && saved.length > 0) {
+    for (const record of saved) {
+      await addItem(record);
+    }
+    console.log(`Перенесено записів із localStorage: ${saved.length}`);
+  }
+
+  localStorage.setItem('migrated', 'true');
+}
 
 
 
@@ -195,18 +263,30 @@ function updateNoteCounter() {
 moodInput.addEventListener('input', validateMood);
 noteInput.addEventListener('input', updateNoteCounter);
 
-// Видаляє запис за id і зберігає масив у localStorage
-function removeRecord(id) {
-  const index = moodRecords.findIndex(record => record.id === id);
-  if (index !== -1) {
-    moodRecords.splice(index, 1);
-    saveToLocalStorage(moodRecords);
+// Показує повідомлення про помилку сховища (порожній рядок — ховає)
+function showStorageError(message) {
+  const box = document.querySelector('#storage-error');
+  box.textContent = message;
+  box.hidden = message === '';
+}
+
+// Видаляє запис за id: спочатку з IndexedDB, потім з масиву на екрані
+async function removeRecord(id) {
+  try {
+    await deleteItem(id);
+    const index = moodRecords.findIndex(record => record.id === id);
+    if (index !== -1) {
+      moodRecords.splice(index, 1);
+    }
     updateSummary();
+  } catch (error) {
+    console.error(error);
+    showStorageError('Не вдалося видалити запис.');
   }
 }
 
 // Надсилання форми: без перезавантаження сторінки
-form.addEventListener('submit', event => {
+form.addEventListener('submit', async event => {
   event.preventDefault();
 
   // зчитуємо значення полів
@@ -221,25 +301,25 @@ form.addEventListener('submit', event => {
     return;
   }
 
-  // унікальний id: на одиницю більший за найбільший наявний
-  const id = Math.max(0, ...moodRecords.map(record => record.id)) + 1;
+  try {
+    // зберігаємо в IndexedDB; id видає autoIncrement
+    const id = await addItem({ date, mood, note });
 
-  // додаємо новий запис у масив, найновіші дати зверху
-  moodRecords.push({ id, date, mood, note });
-  moodRecords.sort((a, b) => b.date.localeCompare(a.date));
+    // додаємо запис у реактивний масив, найновіші дати зверху
+    moodRecords.push({ id, date, mood, note });
+    moodRecords.sort((a, b) => b.date.localeCompare(a.date));
+    updateSummary();
 
-  // зберігаємо після кожної зміни стану (як і в обробниках практикуму 8)
-  saveToLocalStorage(moodRecords);
-
-  // список перемальовує Vue сам; оновлюємо підсумок
-  updateSummary();
-
-  // очищаємо форму та службові повідомлення
-  form.reset();
-  moodInput.setCustomValidity('');
-  moodError.textContent = '';
-  updateNoteCounter();
-  formStatus.textContent = `Запис за ${date} додано та збережено`;
+    // очищаємо форму та службові повідомлення
+    form.reset();
+    moodInput.setCustomValidity('');
+    moodError.textContent = '';
+    updateNoteCounter();
+    formStatus.textContent = `Запис за ${date} додано та збережено`;
+  } catch (error) {
+    console.error(error);
+    formStatus.textContent = 'Не вдалося зберегти запис.';
+  }
 });
 
 // ===== Практикум 9: запит до API (fetch / async / await) =====
@@ -328,3 +408,22 @@ reloadBtn.addEventListener('click', loadComments);
 
 // Перше завантаження при відкритті сторінки
 loadComments();
+
+// ===== Початкове завантаження з IndexedDB =====
+
+// Мігрує старі дані, читає всі записи й заповнює реактивний масив;
+// якщо IndexedDB недоступна (наприклад, у приватному режимі) — показуємо зрозуміле повідомлення
+async function initStorage() {
+  try {
+    await migrateFromLocalStorage();
+    const items = await getAllItems();
+    items.sort((a, b) => b.date.localeCompare(a.date));
+    moodRecords.splice(0, moodRecords.length, ...items);
+    updateSummary();
+  } catch (error) {
+    console.error(error);
+    showStorageError('Сховище IndexedDB недоступне: записи не будуть збережені.');
+  }
+}
+
+initStorage();
