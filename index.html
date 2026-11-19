@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Трекер настрою</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- Vue 3 (глобальна збірка через CDN); defer зберігає порядок: спочатку Vue, потім script.js -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -60,35 +62,14 @@
         </div>
 
         <div class="cards" id="mood-history">
-          <article class="record mood-5 static-example">
-            <h3>23 вересня 2026</h3>
-            <p class="mood-badge">Настрій: 5 — Радісний</p>
-            <p>Гарний день, все встигла зробити.</p>
-          </article>
-
-          <article class="record mood-3">
-            <h3>22 вересня 2026</h3>
-            <p class="mood-badge">Настрій: 3 — Втомлений</p>
-            <p>Багато навчання, мало сну.</p>
-          </article>
-
-          <article class="record mood-4">
-            <h3>21 вересня 2026</h3>
-            <p class="mood-badge">Настрій: 4 — Спокійний</p>
-            <p>Звичайний день.</p>
-          </article>
-
-          <article class="record mood-2">
-            <h3>20 вересня 2026</h3>
-            <p class="mood-badge">Настрій: 2 — Сумний</p>
-            <p>Дощ і нічого не хотілося.</p>
-          </article>
-
-          <article class="record mood-1">
-            <h3>19 вересня 2026</h3>
-            <p class="mood-badge">Настрій: 1 — Роздратований</p>
-            <p>Не вийшло з першого разу, дратувало.</p>
-          </article>
+          <!-- Vue рендерить по одному компоненту на кожен запис (v-for + :key за id) -->
+          <mood-entry
+            v-for="record in records"
+            :key="record.id"
+            :date="record.date"
+            :mood="record.mood"
+            :note="record.note"
+          ></mood-entry>
         </div>
       </section>
 

@@ -1,16 +1,19 @@
+// Практикум 10: обрано Vue 3 (CDN) — простий синтаксис шаблонів і не потрібен Babel для JSX.
+// Список записів настрою тепер рендерить компонент MoodEntry; ручний рендер із практикуму 7 прибрано.
 // Практикум 6: основи JavaScript. Результат виводиться в консоль браузера.
 
 // Перевірка підключення файлу
 console.log('script.js підключено');
 
 // ===== Дані варіанта: записи настрою (mood — число від 1 до 5) =====
-const moodRecords = [
-  { date: '2026-09-23', mood: 5, note: 'Гарний день, все встигла зробити.' },
-  { date: '2026-09-22', mood: 3, note: 'Багато навчання, мало сну.' },
-  { date: '2026-09-21', mood: 4, note: 'Звичайний день.' },
-  { date: '2026-09-20', mood: 2, note: 'Дощ і нічого не хотілося.' },
-  { date: '2026-09-19', mood: 1, note: 'Не вийшло з першого разу, дратувало.' },
-];
+// Vue.reactive робить масив реактивним: будь-яка зміна (push, sort) автоматично оновлює список
+const moodRecords = Vue.reactive([
+  { id: 5, date: '2026-09-23', mood: 5, note: 'Гарний день, все встигла зробити.' },
+  { id: 4, date: '2026-09-22', mood: 3, note: 'Багато навчання, мало сну.' },
+  { id: 3, date: '2026-09-21', mood: 4, note: 'Звичайний день.' },
+  { id: 2, date: '2026-09-20', mood: 2, note: 'Дощ і нічого не хотілося.' },
+  { id: 1, date: '2026-09-19', mood: 1, note: 'Не вийшло з першого разу, дратувало.' },
+]);
 
 // Назви рівнів настрою (індекс масиву = рівень, 0 не використовується)
 const moodNames = ['', 'Роздратований', 'Сумний', 'Втомлений', 'Спокійний', 'Радісний'];
@@ -65,42 +68,46 @@ console.log(`Останній запис (${moodToLabel(lastMood)}) — ${compar
 console.log(`Середній настрій словами: ${moodToLabel(Math.round(averageMood))}`);
 
 // ===== Практикум 7: маніпуляція DOM =====
+// Функцію renderMoodHistory (createElement + append) видалено: для списку записів
+// її замінено Vue-компонентом MoodEntry (практикум 10). Статичної картки в HTML більше немає.
 
-// Видаляємо статичний приклад картки з розмітки
-const staticExample = document.querySelector('.static-example');
-if (staticExample) {
-  staticExample.remove();
-}
+// ===== Практикум 10: Vue-компонент MoodEntry =====
 
-// Повертає клас за рівнем настрою (good / ok / hard)
-const moodLevel = mood => (mood >= 4 ? 'good' : mood === 3 ? 'ok' : 'hard');
+// Компонент одного запису: отримує дані лише через props і не звертається до глобальних змінних
+const MoodEntry = {
+  props: ['date', 'mood', 'note'],
+  computed: {
+    // похідне значення: емодзі обчислюється зі значення mood (1–5), окремо не зберігається
+    emoji() {
+      const emojis = ['❔', '😠', '😢', '😴', '😌', '😄'];
+      return emojis[this.mood] || emojis[0];
+    },
+    // назва настрою за числом
+    label() {
+      const names = ['невідомо', 'Роздратований', 'Сумний', 'Втомлений', 'Спокійний', 'Радісний'];
+      return names[this.mood] || names[0];
+    },
+    // клас рівня настрою (good / ok / hard)
+    level() {
+      return this.mood >= 4 ? 'good' : this.mood === 3 ? 'ok' : 'hard';
+    },
+  },
+  template: `
+    <article class="record" :class="['mood-' + mood, level]" :data-mood="mood">
+      <h3>{{ date }}</h3>
+      <p class="mood-badge">{{ emoji }} Настрій: {{ mood }} — {{ label }}</p>
+      <p>{{ note || 'Без нотатки' }}</p>
+    </article>
+  `,
+};
 
-// Створює картку запису через createElement і додає її в контейнер
-function renderMoodHistory(records) {
-  const container = document.querySelector('#mood-history');
-  container.innerHTML = '';
-
-  for (const record of records) {
-    const card = document.createElement('article');
-    card.classList.add('record', `mood-${record.mood}`, moodLevel(record.mood));
-    card.dataset.mood = record.mood;
-
-    const title = document.createElement('h3');
-    title.textContent = record.date;
-
-    const badge = document.createElement('p');
-    badge.classList.add('mood-badge');
-    badge.textContent = `Настрій: ${record.mood} — ${moodToLabel(record.mood)}`;
-
-    const note = document.createElement('p');
-    note.textContent = record.note || 'Без нотатки';
-
-    card.append(title, badge, note);
-    container.append(card);
-  }
-}
-
-renderMoodHistory(moodRecords);
+// Кореневий застосунок: records — той самий реактивний масив moodRecords
+Vue.createApp({
+  components: { MoodEntry },
+  data() {
+    return { records: moodRecords };
+  },
+}).mount('#mood-history');
 
 // Оновлює підсумок через textContent за поточним масивом
 function updateSummary() {
@@ -168,12 +175,11 @@ form.addEventListener('submit', event => {
   }
 
   // новий об'єкт у тому ж форматі, що й у масиві; додаємо в масив
-  moodRecords.push({ date, mood, note });
+  moodRecords.push({ id: Date.now(), date, mood, note });
   // найновіші дати зверху (рядки РРРР-ММ-ДД порівнюються коректно)
   moodRecords.sort((a, b) => b.date.localeCompare(a.date));
 
-  // перемальовуємо список і підсумок
-  renderMoodHistory(moodRecords);
+  // список перемальовує Vue сам (масив реактивний); оновлюємо лише підсумок
   updateSummary();
 
   // очищаємо форму та службові повідомлення
