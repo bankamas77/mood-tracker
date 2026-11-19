@@ -1,19 +1,50 @@
-// Практикум 10: обрано Vue 3 (CDN) — простий синтаксис шаблонів і не потрібен Babel для JSX.
-// Список записів настрою тепер рендерить компонент MoodEntry; ручний рендер із практикуму 7 прибрано.
+// Практикум 11 (частина 1): збереження записів у localStorage (JSON.stringify / JSON.parse).
+// Практикум 10: Vue 3 (CDN), список рендерить компонент MoodEntry.
 // Практикум 6: основи JavaScript. Результат виводиться в консоль браузера.
 
 // Перевірка підключення файлу
 console.log('script.js підключено');
 
 // ===== Дані варіанта: записи настрою (mood — число від 1 до 5) =====
-// Vue.reactive робить масив реактивним: будь-яка зміна (push, sort) автоматично оновлює список
-const moodRecords = Vue.reactive([
+// Початкові (демонстраційні) записи; також використовуються в демонстрації практикуму 6
+const seedRecords = [
   { id: 5, date: '2026-09-23', mood: 5, note: 'Гарний день, все встигла зробити.' },
   { id: 4, date: '2026-09-22', mood: 3, note: 'Багато навчання, мало сну.' },
   { id: 3, date: '2026-09-21', mood: 4, note: 'Звичайний день.' },
   { id: 2, date: '2026-09-20', mood: 2, note: 'Дощ і нічого не хотілося.' },
   { id: 1, date: '2026-09-19', mood: 1, note: 'Не вийшло з першого разу, дратувало.' },
-]);
+];
+
+// ===== Практикум 11: localStorage =====
+
+// Ключ, під яким масив записів зберігається в localStorage
+const STORAGE_KEY = 'moodEntries';
+
+// Зберігає масив записів у localStorage (тільки рядки, тому JSON.stringify)
+function saveToLocalStorage(items) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+// Читає масив записів із localStorage; при пошкоджених даних повертає порожній масив
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    console.error('Пошкоджені дані в localStorage:', error);
+    return [];
+  }
+}
+
+// Перший запуск (ключа ще немає) — зберігаємо демонстраційні записи, далі беремо збережене
+if (localStorage.getItem(STORAGE_KEY) === null) {
+  saveToLocalStorage(seedRecords);
+}
+
+// Vue.reactive робить масив реактивним: будь-яка зміна (push, sort) автоматично оновлює список
+const moodRecords = Vue.reactive(loadFromLocalStorage());
+
+
 
 // Назви рівнів настрою (індекс масиву = рівень, 0 не використовується)
 const moodNames = ['', 'Роздратований', 'Сумний', 'Втомлений', 'Спокійний', 'Радісний'];
@@ -52,15 +83,15 @@ function classifyWeek(average) {
 }
 
 // ===== Виконання =====
-console.log(`Кількість записів: ${moodRecords.length}`);
-printRecords(moodRecords);
+console.log(`Кількість записів: ${seedRecords.length}`);
+printRecords(seedRecords);
 
-const averageMood = calcAverageMood(moodRecords);
+const averageMood = calcAverageMood(seedRecords);
 console.log(`Середній настрій: ${averageMood}`);
 console.log(`Висновок: ${classifyWeek(averageMood)}`);
 
 // Потрійний оператор: чи був останній запис кращим за середнє
-const lastMood = moodRecords[0].mood;
+const lastMood = seedRecords[0].mood;
 const comparison = lastMood > averageMood ? 'вище за середнє' : 'не вище за середнє';
 console.log(`Останній запис (${moodToLabel(lastMood)}) — ${comparison}`);
 
@@ -75,7 +106,8 @@ console.log(`Середній настрій словами: ${moodToLabel(Math.
 
 // Компонент одного запису: отримує дані лише через props і не звертається до глобальних змінних
 const MoodEntry = {
-  props: ['date', 'mood', 'note'],
+  props: ['id', 'date', 'mood', 'note'],
+  emits: ['remove'],
   computed: {
     // похідне значення: емодзі обчислюється зі значення mood (1–5), окремо не зберігається
     emoji() {
@@ -97,6 +129,7 @@ const MoodEntry = {
       <h3>{{ date }}</h3>
       <p class="mood-badge">{{ emoji }} Настрій: {{ mood }} — {{ label }}</p>
       <p>{{ note || 'Без нотатки' }}</p>
+      <button type="button" class="delete-btn" @click="$emit('remove', id)">Видалити</button>
     </article>
   `,
 };
@@ -106,6 +139,10 @@ Vue.createApp({
   components: { MoodEntry },
   data() {
     return { records: moodRecords };
+  },
+  methods: {
+    // подія remove від дочірнього компонента: видаляємо запис за id
+    removeRecord,
   },
 }).mount('#mood-history');
 
@@ -158,6 +195,16 @@ function updateNoteCounter() {
 moodInput.addEventListener('input', validateMood);
 noteInput.addEventListener('input', updateNoteCounter);
 
+// Видаляє запис за id і зберігає масив у localStorage
+function removeRecord(id) {
+  const index = moodRecords.findIndex(record => record.id === id);
+  if (index !== -1) {
+    moodRecords.splice(index, 1);
+    saveToLocalStorage(moodRecords);
+    updateSummary();
+  }
+}
+
 // Надсилання форми: без перезавантаження сторінки
 form.addEventListener('submit', event => {
   event.preventDefault();
@@ -174,12 +221,17 @@ form.addEventListener('submit', event => {
     return;
   }
 
-  // новий об'єкт у тому ж форматі, що й у масиві; додаємо в масив
-  moodRecords.push({ id: Date.now(), date, mood, note });
-  // найновіші дати зверху (рядки РРРР-ММ-ДД порівнюються коректно)
+  // унікальний id: на одиницю більший за найбільший наявний
+  const id = Math.max(0, ...moodRecords.map(record => record.id)) + 1;
+
+  // додаємо новий запис у масив, найновіші дати зверху
+  moodRecords.push({ id, date, mood, note });
   moodRecords.sort((a, b) => b.date.localeCompare(a.date));
 
-  // список перемальовує Vue сам (масив реактивний); оновлюємо лише підсумок
+  // зберігаємо після кожної зміни стану (як і в обробниках практикуму 8)
+  saveToLocalStorage(moodRecords);
+
+  // список перемальовує Vue сам; оновлюємо підсумок
   updateSummary();
 
   // очищаємо форму та службові повідомлення
@@ -187,7 +239,7 @@ form.addEventListener('submit', event => {
   moodInput.setCustomValidity('');
   moodError.textContent = '';
   updateNoteCounter();
-  formStatus.textContent = `Запис за ${date} додано`;
+  formStatus.textContent = `Запис за ${date} додано та збережено`;
 });
 
 // ===== Практикум 9: запит до API (fetch / async / await) =====

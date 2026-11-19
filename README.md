@@ -13,3 +13,4 @@
 Практикум 8: обробка подій та форми, клієнтська валідація (addEventListener, preventDefault, setCustomValidity, form.reset).
 Практикум 9: клієнт для API (fetch, async/await, обробка помилок, стан завантаження).
 Практикум 10: Vue 3 через CDN, компонент MoodEntry (props, v-for, computed).
+Практикум 11 (частина 1): localStorage — збереження записів між перезавантаженнями сторінки.

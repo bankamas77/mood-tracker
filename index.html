@@ -68,8 +68,11 @@
             :key="record.id"
             :date="record.date"
             :mood="record.mood"
+            :id="record.id"
             :note="record.note"
+            @remove="removeRecord"
           ></mood-entry>
+          <p v-if="records.length === 0" class="empty">Записів поки немає.</p>
         </div>
       </section>
 
